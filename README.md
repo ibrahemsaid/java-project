@@ -5,7 +5,7 @@ in-progress university project, not a website.
 
 ## Technology
 
-- Java 21
+- Java 21 LTS
 - Maven Wrapper (Maven 3.10.0; no separate Maven installation required)
 - JavaFX 21.0.6, FXML, and CSS
 - MySQL 8.4 with JDBC (MySQL Connector/J 9.2.0)

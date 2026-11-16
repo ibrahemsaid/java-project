@@ -1,12 +1,36 @@
+
+# Maven build output
 target/
+
+# Java compiled files
 *.class
+
+# Logs
 *.log
+
+# IDE files
 .idea/
 .vscode/
 *.iml
 .project
 .classpath
 .settings/
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Local database credentials
 config/db.properties
+
+# Local database data and backups
+/database/local/
+/database/backups/
+*.sql.gz
+*.dump
+*.bak
+*.backup
+
+# MySQL local data files
+*.ibd
+*.ibdata
