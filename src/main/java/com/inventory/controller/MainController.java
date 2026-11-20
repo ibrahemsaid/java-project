@@ -1,16 +1,29 @@
 package com.inventory.controller;
 
+import com.inventory.service.CategoryService;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.FXML;
+import javafx.scene.Parent;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MainController {
+    private static final Logger LOGGER = Logger.getLogger(MainController.class.getName());
+    private static final String ADMIN_ROLE = "ADMIN";
+
+    private final CategoryService categoryService;
+
     @FXML
     private VBox contentArea;
 
@@ -50,11 +63,17 @@ public class MainController {
     private String authenticatedRole;
     private BooleanSupplier logoutAction;
 
+    public MainController(CategoryService categoryService) {
+        this.categoryService = Objects.requireNonNull(categoryService);
+    }
+
     @FXML
     private void initialize() {
         navigationButtons = List.of(
                 dashboardButton, productsButton, categoriesButton, salesButton,
                 stockMovementsButton, usersButton, reportsButton);
+        categoriesButton.setVisible(false);
+        categoriesButton.setManaged(false);
         showDashboard();
         selectNavigationButton(dashboardButton);
     }
@@ -70,6 +89,9 @@ public class MainController {
         authenticatedRole = role;
         usernameLabel.setText(authenticatedUsername);
         roleLabel.setText(authenticatedRole);
+        boolean admin = isAdmin();
+        categoriesButton.setVisible(admin);
+        categoriesButton.setManaged(admin);
     }
 
     public void setLogoutAction(BooleanSupplier logoutAction) {
@@ -90,8 +112,29 @@ public class MainController {
 
     @FXML
     private void handleCategoriesNavigation() {
-        showComingSoon("Categories");
-        selectNavigationButton(categoriesButton);
+        if (!isAdmin()) {
+            showAccessDenied();
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/inventory/view/categories-view.fxml"));
+            loader.setControllerFactory(controllerType -> {
+                if (controllerType == CategoryController.class) {
+                    return new CategoryController(categoryService, authenticatedRole);
+                }
+                throw new IllegalStateException(
+                        "No controller factory is configured for "
+                                + controllerType.getName());
+            });
+            Parent categoriesView = loader.load();
+            contentArea.getChildren().setAll(categoriesView);
+            selectNavigationButton(categoriesButton);
+        } catch (IOException | RuntimeException exception) {
+            LOGGER.log(Level.SEVERE, "Unable to open the Categories screen.", exception);
+            showNavigationError();
+        }
     }
 
     @FXML
@@ -177,6 +220,31 @@ public class MainController {
         VBox placeholder = new VBox(12, comingSoon, description);
         placeholder.getStyleClass().add("coming-soon-card");
         contentArea.getChildren().setAll(title, placeholder);
+    }
+
+    private boolean isAdmin() {
+        return ADMIN_ROLE.equals(authenticatedRole);
+    }
+
+    private void showAccessDenied() {
+        Label title = new Label("Categories");
+        title.getStyleClass().add("page-title");
+
+        Label message = new Label("Only Admin users can manage categories.");
+        message.setId("accessDeniedMessage");
+        message.getStyleClass().add("coming-soon-description");
+
+        VBox accessDenied = new VBox(12, message);
+        accessDenied.getStyleClass().add("coming-soon-card");
+        contentArea.getChildren().setAll(title, accessDenied);
+    }
+
+    private void showNavigationError() {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Categories unavailable");
+        alert.setHeaderText("Unable to open Categories.");
+        alert.setContentText("Please try again later.");
+        alert.showAndWait();
     }
 
     private void selectNavigationButton(Button selectedButton) {

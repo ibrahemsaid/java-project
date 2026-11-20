@@ -1,6 +1,7 @@
 package com.inventory.controller;
 
 import com.inventory.model.User;
+import com.inventory.service.CategoryService;
 import com.inventory.service.UserService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,6 +22,7 @@ import java.util.Optional;
 
 public class LoginController {
     private final UserService userService;
+    private final CategoryService categoryService;
 
     @FXML
     private TextField usernameField;
@@ -36,8 +38,9 @@ public class LoginController {
 
     private boolean loginInProgress;
 
-    public LoginController(UserService userService) {
+    public LoginController(UserService userService, CategoryService categoryService) {
         this.userService = userService;
+        this.categoryService = categoryService;
     }
 
     @FXML
@@ -85,6 +88,13 @@ public class LoginController {
     private void showMainView(User user) throws IOException {
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/com/inventory/view/main-view.fxml"));
+        loader.setControllerFactory(controllerType -> {
+            if (controllerType == MainController.class) {
+                return new MainController(categoryService);
+            }
+            throw new IllegalStateException(
+                    "No controller factory is configured for " + controllerType.getName());
+        });
         Parent root = loader.load();
 
         Stage stage = (Stage) loginButton.getScene().getWindow();
@@ -109,7 +119,7 @@ public class LoginController {
                     getClass().getResource("/com/inventory/view/login-view.fxml"));
             loader.setControllerFactory(controllerType -> {
                 if (controllerType == LoginController.class) {
-                    return new LoginController(userService);
+                    return new LoginController(userService, categoryService);
                 }
                 throw new IllegalStateException(
                         "No controller factory is configured for " + controllerType.getName());
