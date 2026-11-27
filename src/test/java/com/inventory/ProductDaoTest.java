@@ -35,6 +35,7 @@ public final class ProductDaoTest {
                 new BigDecimal("15.75"),
                 25,
                 5);
+        int originalQuantity = product.getQuantity();
 
         try {
             productDao.save(product);
@@ -73,6 +74,9 @@ public final class ProductDaoTest {
             Optional<Product> updated = productDao.findById(product.getId());
             require(updated.isPresent(), "Updated product was not found by ID.");
             requireUpdatedValues(updated.get(), product);
+            require(
+                    updated.get().getQuantity() == originalQuantity,
+                    "Product update changed stock quantity.");
             System.out.println("PASS: findById returned all updated values.");
 
             require(productDao.deleteById(product.getId()), "deleteById did not delete the temporary product.");
@@ -118,7 +122,6 @@ public final class ProductDaoTest {
         require(
                 actual.getSellingPrice().compareTo(expected.getSellingPrice()) == 0,
                 "Updated selling price does not match.");
-        require(actual.getQuantity() == expected.getQuantity(), "Updated quantity does not match.");
         require(
                 actual.getMinimumStock() == expected.getMinimumStock(),
                 "Updated minimum stock does not match.");

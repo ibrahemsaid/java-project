@@ -51,6 +51,23 @@ public class ProductDao {
         return Optional.empty();
     }
 
+    public Optional<Product> findByIdForUpdate(long id, Connection connection)
+            throws SQLException {
+        String sql = SELECT_COLUMNS + " WHERE id = ? FOR UPDATE";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, id);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(mapProduct(resultSet));
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
     public Optional<Product> findByCode(String code) throws SQLException {
         String sql = SELECT_COLUMNS + " WHERE code = ?";
 
@@ -87,15 +104,20 @@ public class ProductDao {
     }
 
     public Product save(Product product) throws SQLException {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            return save(product, connection);
+        }
+    }
+
+    public Product save(Product product, Connection connection) throws SQLException {
         String sql = """
                 INSERT INTO products (
                     name, code, category_id, purchase_price, selling_price, quantity, minimum_stock
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(
-                     sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement statement = connection.prepareStatement(
+                sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, product.getName());
             statement.setString(2, product.getCode());
             statement.setLong(3, product.getCategoryId());
@@ -116,11 +138,33 @@ public class ProductDao {
         throw new SQLException("Inserting the product did not return a generated ID.");
     }
 
+    public int changeStockQuantity(
+            long productId,
+            int quantityChange,
+            Connection connection) throws SQLException {
+        if (quantityChange == 0) {
+            throw new IllegalArgumentException("Quantity change must not be zero.");
+        }
+
+        String sql = """
+                UPDATE products
+                SET quantity = quantity + ?
+                WHERE id = ? AND quantity + ? >= 0
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, quantityChange);
+            statement.setLong(2, productId);
+            statement.setInt(3, quantityChange);
+            return statement.executeUpdate();
+        }
+    }
+
     public boolean update(Product product) throws SQLException {
         String sql = """
                 UPDATE products
                 SET name = ?, code = ?, category_id = ?, purchase_price = ?,
-                    selling_price = ?, quantity = ?, minimum_stock = ?
+                    selling_price = ?, minimum_stock = ?
                 WHERE id = ?
                 """;
 
@@ -131,9 +175,8 @@ public class ProductDao {
             statement.setLong(3, product.getCategoryId());
             statement.setBigDecimal(4, product.getPurchasePrice());
             statement.setBigDecimal(5, product.getSellingPrice());
-            statement.setInt(6, product.getQuantity());
-            statement.setInt(7, product.getMinimumStock());
-            statement.setLong(8, product.getId());
+            statement.setInt(6, product.getMinimumStock());
+            statement.setLong(7, product.getId());
             return statement.executeUpdate() > 0;
         }
     }

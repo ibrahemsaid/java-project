@@ -1,7 +1,11 @@
 package com.inventory.controller;
 
 import com.inventory.model.User;
+import com.inventory.dao.SaleDao;
+import com.inventory.dao.SaleItemDao;
 import com.inventory.service.CategoryService;
+import com.inventory.service.ProductService;
+import com.inventory.service.SaleService;
 import com.inventory.service.UserService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,6 +27,10 @@ import java.util.Optional;
 public class LoginController {
     private final UserService userService;
     private final CategoryService categoryService;
+    private final ProductService productService;
+    private final SaleService saleService;
+    private final SaleDao saleDao;
+    private final SaleItemDao saleItemDao;
 
     @FXML
     private TextField usernameField;
@@ -38,9 +46,19 @@ public class LoginController {
 
     private boolean loginInProgress;
 
-    public LoginController(UserService userService, CategoryService categoryService) {
+    public LoginController(
+            UserService userService,
+            CategoryService categoryService,
+            ProductService productService,
+            SaleService saleService,
+            SaleDao saleDao,
+            SaleItemDao saleItemDao) {
         this.userService = userService;
         this.categoryService = categoryService;
+        this.productService = productService;
+        this.saleService = saleService;
+        this.saleDao = saleDao;
+        this.saleItemDao = saleItemDao;
     }
 
     @FXML
@@ -90,7 +108,12 @@ public class LoginController {
                 getClass().getResource("/com/inventory/view/main-view.fxml"));
         loader.setControllerFactory(controllerType -> {
             if (controllerType == MainController.class) {
-                return new MainController(categoryService);
+                return new MainController(
+                        categoryService,
+                        productService,
+                        saleService,
+                        saleDao,
+                        saleItemDao);
             }
             throw new IllegalStateException(
                     "No controller factory is configured for " + controllerType.getName());
@@ -119,7 +142,13 @@ public class LoginController {
                     getClass().getResource("/com/inventory/view/login-view.fxml"));
             loader.setControllerFactory(controllerType -> {
                 if (controllerType == LoginController.class) {
-                    return new LoginController(userService, categoryService);
+                    return new LoginController(
+                            userService,
+                            categoryService,
+                            productService,
+                            saleService,
+                            saleDao,
+                            saleItemDao);
                 }
                 throw new IllegalStateException(
                         "No controller factory is configured for " + controllerType.getName());

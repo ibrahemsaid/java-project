@@ -2,8 +2,14 @@ package com.inventory;
 
 import com.inventory.controller.MainController;
 import com.inventory.dao.CategoryDao;
+import com.inventory.dao.ProductDao;
+import com.inventory.dao.SaleDao;
+import com.inventory.dao.SaleItemDao;
+import com.inventory.dao.StockMovementDao;
 import com.inventory.model.Category;
 import com.inventory.service.CategoryService;
+import com.inventory.service.ProductService;
+import com.inventory.service.SaleService;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -95,7 +101,18 @@ public final class CategoryUiTest {
                 CategoryUiTest.class.getResource("/com/inventory/view/main-view.fxml"));
         loader.setControllerFactory(controllerType -> {
             if (controllerType == MainController.class) {
-                return new MainController(categoryService);
+                ProductDao productDao = new ProductDao();
+                SaleDao saleDao = new SaleDao();
+                SaleItemDao saleItemDao = new SaleItemDao();
+                StockMovementDao stockMovementDao = new StockMovementDao();
+                return new MainController(
+                        categoryService,
+                        new ProductService(
+                                productDao, new CategoryDao(), stockMovementDao),
+                        new SaleService(
+                                productDao, saleDao, saleItemDao, stockMovementDao),
+                        saleDao,
+                        saleItemDao);
             }
             throw new IllegalStateException(
                     "No controller factory is configured for " + controllerType.getName());

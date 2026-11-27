@@ -235,3 +235,64 @@
     -fx-font-size: 12px;
     -fx-text-fill: #718198;
 }
+
+.sales-page {
+    -fx-spacing: 18px;
+}
+
+.sales-workspace {
+    -fx-alignment: TOP_LEFT;
+}
+
+.sales-panel {
+    -fx-padding: 18px;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10px;
+    -fx-border-color: #e6ecf2;
+    -fx-border-radius: 10px;
+}
+
+.sales-section-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #34495e;
+}
+
+.sales-search {
+    -fx-pref-height: 36px;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d6dee8;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.sales-table {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e6ecf2;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+.sales-total-row {
+    -fx-padding: 8px 0 2px 0;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #34495e;
+}
+
+.sales-total-value {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #236b9b;
+}
+
+.sales-status {
+    -fx-font-size: 12px;
+    -fx-text-fill: #718198;
+}
+
+.invoice-details {
+    -fx-padding: 10px;
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 8px;
+}

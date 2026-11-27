@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.inventory.controller.SalesController"
+      spacing="18.0"
+      styleClass="sales-page">
+    <padding>
+        <Insets top="4.0" right="0.0" bottom="4.0" left="0.0"/>
+    </padding>
+
+    <VBox spacing="5.0">
+        <Label text="Sales &amp; Invoices" styleClass="page-title"/>
+        <Label text="Select products, complete a sale, and review invoice history."
+               styleClass="page-description"/>
+    </VBox>
+
+    <VBox spacing="18.0" styleClass="sales-workspace">
+        <VBox spacing="12.0" styleClass="sales-panel">
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <Label text="Available products" styleClass="sales-section-title"/>
+                <HBox HBox.hgrow="ALWAYS"/>
+                <Button fx:id="refreshProductsButton"
+                        text="Refresh"
+                        onAction="#handleRefreshProducts"
+                        styleClass="category-secondary-button"/>
+            </HBox>
+            <TextField fx:id="productSearchField"
+                       promptText="Search by product name or code"
+                       styleClass="sales-search"/>
+            <TableView fx:id="productTable"
+                       prefHeight="250.0"
+                       styleClass="sales-table">
+                <columns>
+                    <TableColumn fx:id="productNameColumn"
+                                 text="Product"
+                                 prefWidth="190.0"/>
+                    <TableColumn fx:id="productCodeColumn"
+                                 text="Code"
+                                 prefWidth="95.0"/>
+                    <TableColumn fx:id="productPriceColumn"
+                                 text="Selling price"
+                                 prefWidth="105.0"/>
+                    <TableColumn fx:id="productStockColumn"
+                                 text="Stock"
+                                 prefWidth="65.0"/>
+                </columns>
+                <placeholder>
+                    <Label text="No available products match your search."/>
+                </placeholder>
+            </TableView>
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <Label text="Quantity"/>
+                <TextField fx:id="productQuantityField"
+                           text="1"
+                           prefWidth="85.0"
+                           promptText="Quantity"/>
+                <Button fx:id="addToCartButton"
+                        text="Add to cart"
+                        onAction="#handleAddToCart"
+                        styleClass="category-primary-button"/>
+            </HBox>
+            <Label fx:id="productStatusLabel"
+                   text="Loading available products..."
+                   styleClass="sales-status"
+                   wrapText="true"/>
+        </VBox>
+
+        <VBox spacing="12.0" styleClass="sales-panel">
+            <Label text="Shopping cart" styleClass="sales-section-title"/>
+            <TableView fx:id="cartTable"
+                       prefHeight="250.0"
+                       styleClass="sales-table">
+                <columns>
+                    <TableColumn fx:id="cartNameColumn"
+                                 text="Product"
+                                 prefWidth="145.0"/>
+                    <TableColumn fx:id="cartCodeColumn"
+                                 text="Code"
+                                 prefWidth="75.0"/>
+                    <TableColumn fx:id="cartPriceColumn"
+                                 text="Unit price"
+                                 prefWidth="85.0"/>
+                    <TableColumn fx:id="cartQuantityColumn"
+                                 text="Qty"
+                                 prefWidth="48.0"/>
+                    <TableColumn fx:id="cartSubtotalColumn"
+                                 text="Subtotal"
+                                 prefWidth="85.0"/>
+                </columns>
+                <placeholder>
+                    <Label text="Your cart is empty. Select products to start a sale."/>
+                </placeholder>
+            </TableView>
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <Label text="Selected quantity"/>
+                <TextField fx:id="cartQuantityField"
+                           prefWidth="75.0"
+                           promptText="Quantity"/>
+                <Button fx:id="updateCartButton"
+                        text="Update"
+                        onAction="#handleUpdateCartQuantity"
+                        styleClass="category-secondary-button"/>
+                <Button fx:id="removeCartItemButton"
+                        text="Remove"
+                        onAction="#handleRemoveCartItem"
+                        styleClass="category-danger-button"/>
+            </HBox>
+            <HBox alignment="CENTER_RIGHT" spacing="12.0" styleClass="sales-total-row">
+                <Label text="Total"/>
+                <Label fx:id="cartTotalLabel"
+                       text="0.00"
+                       styleClass="sales-total-value"/>
+            </HBox>
+            <Button fx:id="checkoutButton"
+                    text="Confirm checkout"
+                    maxWidth="Infinity"
+                    onAction="#handleCheckout"
+                    styleClass="category-primary-button"/>
+            <Label fx:id="checkoutStatusLabel"
+                   styleClass="sales-status"
+                   wrapText="true"/>
+        </VBox>
+    </VBox>
+
+    <VBox spacing="12.0" styleClass="sales-panel">
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Invoice history" styleClass="sales-section-title"/>
+            <HBox HBox.hgrow="ALWAYS"/>
+            <Button fx:id="refreshInvoicesButton"
+                    text="Refresh invoices"
+                    onAction="#handleRefreshInvoices"
+                    styleClass="category-secondary-button"/>
+        </HBox>
+        <VBox spacing="12.0">
+            <TableView fx:id="invoiceTable"
+                       prefHeight="175.0"
+                       styleClass="sales-table">
+                <columns>
+                    <TableColumn fx:id="invoiceIdColumn"
+                                 text="Invoice"
+                                 prefWidth="80.0"/>
+                    <TableColumn fx:id="invoiceDateColumn"
+                                 text="Date"
+                                 prefWidth="160.0"/>
+                    <TableColumn fx:id="invoiceTotalColumn"
+                                 text="Total"
+                                 prefWidth="100.0"/>
+                </columns>
+                <placeholder>
+                    <Label text="No invoices found."/>
+                </placeholder>
+            </TableView>
+
+            <VBox spacing="8.0" styleClass="invoice-details">
+                <HBox alignment="CENTER_LEFT" spacing="8.0">
+                    <Label fx:id="selectedInvoiceTitleLabel"
+                           text="Select an invoice"
+                           styleClass="sales-section-title"/>
+                    <HBox HBox.hgrow="ALWAYS"/>
+                    <Label text="Total"/>
+                    <Label fx:id="selectedInvoiceTotalLabel"
+                           text="—"
+                           styleClass="sales-total-value"/>
+                </HBox>
+                <TableView fx:id="invoiceItemsTable"
+                           prefHeight="165.0"
+                           VBox.vgrow="ALWAYS"
+                           styleClass="sales-table">
+                    <columns>
+                        <TableColumn fx:id="invoiceItemNameColumn"
+                                     text="Historical product"
+                                     prefWidth="145.0"/>
+                        <TableColumn fx:id="invoiceItemCodeColumn"
+                                     text="Code"
+                                     prefWidth="80.0"/>
+                        <TableColumn fx:id="invoiceItemPriceColumn"
+                                     text="Unit price"
+                                     prefWidth="85.0"/>
+                        <TableColumn fx:id="invoiceItemQuantityColumn"
+                                     text="Qty"
+                                     prefWidth="45.0"/>
+                        <TableColumn fx:id="invoiceItemSubtotalColumn"
+                                     text="Subtotal"
+                                     prefWidth="85.0"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="Select an invoice to view its saved line items."/>
+                    </placeholder>
+                </TableView>
+            </VBox>
+        </VBox>
+        <Label fx:id="invoiceStatusLabel"
+               text="Loading invoice history..."
+               styleClass="sales-status"
+               wrapText="true"/>
+    </VBox>
+</VBox>

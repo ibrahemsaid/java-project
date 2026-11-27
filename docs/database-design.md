@@ -91,6 +91,8 @@ should be considered accordingly.
 | `id` | `BIGINT UNSIGNED` primary key | Sale-line identifier. |
 | `sale_id` | `BIGINT UNSIGNED NOT NULL`, foreign key | Parent sale. |
 | `product_id` | `BIGINT UNSIGNED NOT NULL`, foreign key | Product sold. |
+| `product_name` | `VARCHAR(200) NULL` | Product name captured at sale time; `NULL` means unavailable for a legacy sale. |
+| `product_code` | `VARCHAR(64) NULL` | Product code captured at sale time; `NULL` means unavailable for a legacy sale. |
 | `quantity` | `INT NOT NULL` | Positive quantity sold. |
 | `unit_price` | `DECIMAL(12,2) NOT NULL` | Price captured for this line; non-negative. |
 | `subtotal` | `DECIMAL(12,2) NOT NULL` | Non-negative line amount, checked against quantity × unit price. |
@@ -99,7 +101,10 @@ Both foreign keys restrict deletion to preserve the sale history. There is no
 unique constraint on `(sale_id, product_id)`, so a sale may contain more than
 one line for the same product. The sale total is not constrained to equal the
 sum of its lines; the application must calculate and persist both consistently
-in one transaction.
+in one transaction. New sale items store the product name and code captured
+from the locked product record. The snapshot columns remain nullable so
+existing rows without trustworthy historical name or code data can remain
+`NULL`; do not populate those rows from current product details.
 
 ### `stock_movements`
 

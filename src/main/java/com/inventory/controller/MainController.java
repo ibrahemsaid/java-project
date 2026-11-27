@@ -1,6 +1,10 @@
 package com.inventory.controller;
 
 import com.inventory.service.CategoryService;
+import com.inventory.dao.SaleDao;
+import com.inventory.dao.SaleItemDao;
+import com.inventory.service.ProductService;
+import com.inventory.service.SaleService;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
@@ -23,6 +27,10 @@ public class MainController {
     private static final String ADMIN_ROLE = "ADMIN";
 
     private final CategoryService categoryService;
+    private final ProductService productService;
+    private final SaleService saleService;
+    private final SaleDao saleDao;
+    private final SaleItemDao saleItemDao;
 
     @FXML
     private VBox contentArea;
@@ -62,9 +70,19 @@ public class MainController {
     private String authenticatedUsername;
     private String authenticatedRole;
     private BooleanSupplier logoutAction;
+    private boolean salesCheckoutInProgress;
 
-    public MainController(CategoryService categoryService) {
+    public MainController(
+            CategoryService categoryService,
+            ProductService productService,
+            SaleService saleService,
+            SaleDao saleDao,
+            SaleItemDao saleItemDao) {
         this.categoryService = Objects.requireNonNull(categoryService);
+        this.productService = Objects.requireNonNull(productService);
+        this.saleService = Objects.requireNonNull(saleService);
+        this.saleDao = Objects.requireNonNull(saleDao);
+        this.saleItemDao = Objects.requireNonNull(saleItemDao);
     }
 
     @FXML
@@ -100,18 +118,27 @@ public class MainController {
 
     @FXML
     private void handleDashboardNavigation() {
+        if (salesCheckoutInProgress) {
+            return;
+        }
         showDashboard();
         selectNavigationButton(dashboardButton);
     }
 
     @FXML
     private void handleProductsNavigation() {
+        if (salesCheckoutInProgress) {
+            return;
+        }
         showComingSoon("Products");
         selectNavigationButton(productsButton);
     }
 
     @FXML
     private void handleCategoriesNavigation() {
+        if (salesCheckoutInProgress) {
+            return;
+        }
         if (!isAdmin()) {
             showAccessDenied();
             return;
@@ -139,30 +166,71 @@ public class MainController {
 
     @FXML
     private void handleSalesNavigation() {
-        showComingSoon("Sales & Invoices");
-        selectNavigationButton(salesButton);
+        if (salesCheckoutInProgress) {
+            return;
+        }
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/inventory/view/sales-view.fxml"));
+            loader.setControllerFactory(controllerType -> {
+                if (controllerType == SalesController.class) {
+                    return new SalesController(
+                            productService,
+                            saleService,
+                            saleDao,
+                            saleItemDao,
+                            authenticatedUserId,
+                            this::setSalesCheckoutInProgress);
+                }
+                throw new IllegalStateException(
+                        "No controller factory is configured for "
+                                + controllerType.getName());
+            });
+            Parent salesView = loader.load();
+            contentArea.getChildren().setAll(salesView);
+            selectNavigationButton(salesButton);
+        } catch (IOException | RuntimeException exception) {
+            LOGGER.log(Level.SEVERE, "Unable to open the Sales & Invoices screen.", exception);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Sales & Invoices unavailable");
+            alert.setHeaderText("Unable to open Sales & Invoices.");
+            alert.setContentText("Please try again later.");
+            alert.showAndWait();
+        }
     }
 
     @FXML
     private void handleStockMovementsNavigation() {
+        if (salesCheckoutInProgress) {
+            return;
+        }
         showComingSoon("Stock Movements");
         selectNavigationButton(stockMovementsButton);
     }
 
     @FXML
     private void handleUsersNavigation() {
+        if (salesCheckoutInProgress) {
+            return;
+        }
         showComingSoon("Users");
         selectNavigationButton(usersButton);
     }
 
     @FXML
     private void handleReportsNavigation() {
+        if (salesCheckoutInProgress) {
+            return;
+        }
         showComingSoon("Reports");
         selectNavigationButton(reportsButton);
     }
 
     @FXML
     private void handleLogout() {
+        if (salesCheckoutInProgress) {
+            return;
+        }
         if (logoutAction == null) {
             throw new IllegalStateException("Logout action has not been configured.");
         }
@@ -261,5 +329,11 @@ public class MainController {
         usernameLabel.setText("");
         roleLabel.setText("");
         logoutButton.setDisable(true);
+    }
+
+    private void setSalesCheckoutInProgress(boolean inProgress) {
+        salesCheckoutInProgress = inProgress;
+        navigationButtons.forEach(button -> button.setDisable(inProgress));
+        logoutButton.setDisable(inProgress);
     }
 }

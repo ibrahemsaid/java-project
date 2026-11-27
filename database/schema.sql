@@ -70,6 +70,8 @@ CREATE TABLE `sale_items` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `sale_id` BIGINT UNSIGNED NOT NULL,
     `product_id` BIGINT UNSIGNED NOT NULL,
+    `product_name` VARCHAR(200) NULL,
+    `product_code` VARCHAR(64) NULL,
     `quantity` INT NOT NULL,
     `unit_price` DECIMAL(12, 2) NOT NULL,
     `subtotal` DECIMAL(12, 2) NOT NULL,

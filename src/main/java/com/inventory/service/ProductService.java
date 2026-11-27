@@ -2,20 +2,36 @@ package com.inventory.service;
 
 import com.inventory.dao.CategoryDao;
 import com.inventory.dao.ProductDao;
+import com.inventory.dao.StockMovementDao;
 import com.inventory.model.Product;
+import com.inventory.model.StockMovement;
+import com.inventory.model.StockMovementType;
+import com.inventory.util.DatabaseConnection;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 public class ProductService {
+    private static final String OPENING_STOCK_REASON = "Opening stock on product creation";
+
     private final ProductDao productDao;
     private final CategoryDao categoryDao;
+    private final StockMovementDao stockMovementDao;
 
     public ProductService(ProductDao productDao, CategoryDao categoryDao) {
+        this(productDao, categoryDao, new StockMovementDao());
+    }
+
+    public ProductService(
+            ProductDao productDao,
+            CategoryDao categoryDao,
+            StockMovementDao stockMovementDao) {
         this.productDao = productDao;
         this.categoryDao = categoryDao;
+        this.stockMovementDao = stockMovementDao;
     }
 
     public List<Product> getAllProducts() throws SQLException {
@@ -34,15 +50,67 @@ public class ProductService {
         return productDao.findByCategoryId(categoryId);
     }
 
-    public Product createProduct(Product product) throws SQLException {
+    public Product createProduct(Product product, long authenticatedUserId) throws SQLException {
         if (product == null) {
             throw new IllegalArgumentException("Product must not be null.");
         }
+        if (authenticatedUserId <= 0) {
+            throw new IllegalArgumentException("Authenticated user ID must be positive.");
+        }
         validateProductFields(product);
+        normalizeProductFields(product);
         ensureCategoryExists(product.getCategoryId());
         ensureCodeIsAvailable(product.getCode(), 0);
-        normalizeProductFields(product);
-        return productDao.save(product);
+
+        long originalProductId = product.getId();
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            boolean originalAutoCommit = connection.getAutoCommit();
+            boolean restoreAutoCommit = true;
+            Throwable transactionFailure = null;
+
+            try {
+                connection.setAutoCommit(false);
+                productDao.save(product, connection);
+
+                if (product.getQuantity() > 0) {
+                    StockMovement movement = new StockMovement(
+                            product.getId(),
+                            authenticatedUserId,
+                            StockMovementType.RECEIPT,
+                            product.getQuantity(),
+                            0,
+                            product.getQuantity(),
+                            OPENING_STOCK_REASON,
+                            null);
+                    stockMovementDao.save(movement, connection);
+                }
+
+                connection.commit();
+                return product;
+            } catch (SQLException | RuntimeException | Error exception) {
+                transactionFailure = exception;
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackException) {
+                    restoreAutoCommit = false;
+                    exception.addSuppressed(rollbackException);
+                }
+                product.setId(originalProductId);
+                throw exception;
+            } finally {
+                if (restoreAutoCommit) {
+                    try {
+                        connection.setAutoCommit(originalAutoCommit);
+                    } catch (SQLException restoreException) {
+                        if (transactionFailure != null) {
+                            transactionFailure.addSuppressed(restoreException);
+                        } else {
+                            throw restoreException;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public boolean updateProduct(Product product) throws SQLException {
@@ -52,9 +120,16 @@ public class ProductService {
         if (product.getId() <= 0) {
             throw new IllegalArgumentException("Product ID must be positive.");
         }
-        if (productDao.findById(product.getId()).isEmpty()) {
+        Optional<Product> existingProduct = productDao.findById(product.getId());
+        if (existingProduct.isEmpty()) {
             throw new IllegalStateException(
                     "Product with ID " + product.getId() + " does not exist.");
+        }
+        if (product.getQuantity() != existingProduct.get().getQuantity()) {
+            throw new IllegalArgumentException(
+                    "Product quantity cannot be changed through product updates. "
+                            + "Use the stock movement workflow "
+                            + "(StockMovementService.adjustStock) instead.");
         }
 
         validateProductFields(product);
